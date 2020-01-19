@@ -1,0 +1,86 @@
+{
+    "version": "1.0",
+    "frameList": [
+        {
+            "timeStart": 0,
+            "timeStop": 100000000,
+            "objectList": [
+                {
+                    "shape": "rectangle",
+                    "params": {
+                        "x": 0,
+                        "y": 0,
+                        "w": 640,
+                        "h": 10
+                    },
+                    "style": {
+                        "stroke": 1,
+                        "color": "green"
+                    }
+                },
+                {
+                    "shape": "rectangle",
+                    "params": {
+                        "x": 30,
+                        "y": 0,
+                        "w": 100,
+                        "h": 10
+                    },
+                    "style": {
+                        "stroke": -1,
+                        "color": "red"
+                    }
+                },
+                {
+                    "shape": "rectangle",
+                    "params": {
+                        "x": 130,
+                        "y": 0,
+                        "w": 50,
+                        "h": 10
+                    },
+                    "style": {
+                        "stroke": -1,
+                        "color": "blue"
+                    }
+                }
+            ]
+        },
+        {
+            "timeStart": 5,
+            "timeStop": 10,
+            "objectList": [
+                {
+                    "shape": "text",
+                    "params": {
+                        "x": 300,
+                        "y": 150,
+                        "text":"WAR"
+                    },
+                    "style": {
+                        "color": "red",
+                        "font": "bold 32pt Arial"
+                    }
+                }
+            ]
+        },
+        {
+            "timeStart": 20,
+            "timeStop": 25,
+            "objectList": [
+                {
+                    "shape": "text",
+                    "params": {
+                        "x": 300,
+                        "y": 150,
+                        "text":"FIGHT"
+                    },
+                    "style": {
+                        "color": "green",
+                        "font": "bold 32pt Arial"
+                    }
+                }
+            ]
+        }
+    ]
+}

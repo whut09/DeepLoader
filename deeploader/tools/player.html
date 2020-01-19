@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>视频播放器-YAIR</title>
+    <style>
+        * {
+            margin: 0;
+            border: 0;
+        }
+        body{
+            background-color: black;
+        }
+        .button {
+            background-color: #4CAF50; /* Green */
+            border: none;
+            color: white;
+            padding: 15px 0px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            cursor: pointer;
+            -webkit-transition-duration: 0.4s; /* Safari */
+            transition-duration: 0.4s;
+            width: 20%;
+        }
+
+        .button1 {
+            box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+            overflow: hidden;
+        }
+
+        .button2:hover {
+            box-shadow: 0 12px 16px 0 rgba(0, 0, 0, 0.24), 0 17px 50px 0 rgba(0, 0, 0, 0.19);
+        }
+
+        .span1 {
+            width: 80%;
+            box-sizing: border-box;
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+            border: 1px solid #4CAF50;
+            display: -moz-inline-box; /* css注释：for ff2 */
+            display: inline-block;
+            color: #4CAF50;
+            padding: 14px 2%;
+            text-align: left;
+            text-decoration: none;
+            font-size: 16px;
+        }
+
+        #header {
+            width: 100%;
+            margin-top: 5%;
+        }
+
+        #h_content {
+            width: 95%;
+            margin: 0px auto;
+        }
+
+        #body {
+            width: 95%;
+            margin: 0px auto;
+            position: relative;
+        }
+
+        .content {
+            width: 100%;
+            margin: 0px auto;
+            position: absolute;
+        }
+
+        #video {
+            z-index: 1;
+        }
+
+        #canvas {
+            z-index: 2;
+        }
+    </style>
+</head>
+<body>
+<div id="header">
+    <div id="h_content">
+        <input id="v_file" type="file" onchange="play()" multiple="multiple" hidden/>
+        <p><a href="#" id="btnSelect" class="button button2"
+              onclick="document.getElementById('v_file').click();">打开视频</a><span
+                class="span1" id="filename"> <<-- 戳这里先 %>_<% </span></p>
+    </div>
+</div>
+<div id="body">
+    <video id="video" class="content" controls="controls">
+        你的浏览器貌似不支持video 元素 %>_<%
+        <source src="" type="video/mp4">
+    </video>
+    <canvas id="canvas" class="content">
+    </canvas>
+</div>
+<script>
+    var anno_list = [];
+    var video_width = 1024;
+    var video_height = 720;
+    function getFileExt(filename) {
+        var index = filename.lastIndexOf(".");
+        var ext = filename.substr(index + 1);
+        return ext
+    }
+
+    function checkFileType(filename, exts) {
+        var ext = getFileExt(filename)
+        //循环比较
+        for (var i = 0; i < exts.length; i++) {
+            if (ext == exts[i]) {
+                return true
+            }
+        }
+        return false
+    }
+
+    function isFileVideo(filename) {
+        var videoExts = ["mp4", "avi", "ts"];
+        return checkFileType(filename, videoExts)
+    }
+
+    function isFileAnnotation(filename) {
+        return checkFileType(filename, ['json'])
+    }
+
+    function parseAnnotation(file, onReady) {
+        //新建一个FileReader
+        var reader = new FileReader();
+        //读取文件
+        reader.readAsText(file, "UTF-8");
+        //读取完文件之后的回调函数
+        reader.onload = function (evt) {
+            var fileString = evt.target.result;
+            var fileJson = JSON.parse(fileString);
+            //console.log(fileString)
+            anno_list = fileJson.frameList;
+            onReady();
+        }
+        console.log("parse done")
+    }
+
+    function matchTimestamp(current, frameList, delta) {
+        let matched = [];
+        for (let j = 0; j < frameList.length; j++) {
+            frame = frameList[j]
+            // skip empty
+            let objList = frame.objectList;
+            if (objList == undefined || objList == [] || objList == '') {
+                continue;
+            }
+            // is in between ?
+            if (frame.timeStart <= current && current <= frame.timeStop) {
+                matched.push(frame);
+            }
+            // try preload ?
+            let dt_start = current - frame.timeStart;
+            if (dt_start < 0 && dt_start > -0.2 * delta) {
+                matched.push(frame);
+            }
+            let dt_stop = current - frame.timeStop;
+            if (dt_stop > 0 && dt_stop <= 0.8 * delta) {
+                matched.push(frame);
+            }
+        }
+        return matched;
+    }
+
+    function clearCanvas() {
+        let canvas = document.getElementById("canvas");
+        let ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        console.log("CLEAR");
+    }
+
+    function setStyle(ctx, style) {
+        if (style.hasOwnProperty("stroke")) {
+            ctx.lineWidth = style.stroke;
+        }
+        if (style.hasOwnProperty("dash")) {
+            ctx.setLineDash(style.dash);
+        }
+        if (style.hasOwnProperty("color")) {
+            ctx.fontcolor = style.color;
+            ctx.strokeStyle = style.color;
+            ctx.fillStyle = style.color;
+        }
+        if (style.hasOwnProperty("font")) {
+            ctx.font = style.font;
+        }
+    }
+
+    function applyStyle(ctx, style) {
+        if (style.hasOwnProperty("stroke") && style.stroke > 0) {
+            ctx.stroke();
+        } else {
+            ctx.fill();
+        }
+    }
+
+    function drawCircle(ctx, x, y, radius, style) {
+        ctx.beginPath();
+        setStyle(ctx, style);
+        // 绘制圆的路径**
+        ctx.arc(x, y, radius, 0, Math.PI * 2, false);
+        applyStyle(ctx, style);
+    }
+
+    function drawLine(ctx, x1, y1, x2, y2, style) {
+        ctx.beginPath();
+        setStyle(ctx, style);
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+    }
+
+    function drawPolygon(ctx, points, style) {
+        ctx.beginPath();
+        setStyle(ctx, style);
+        let N = points.length;
+        var i = 0;
+        // move to first
+        ctx.moveTo(points[i].x, points[i].y);
+        for (; i < N; i++) {
+            ctx.lineTo(points[i].x, points[i].y);
+        }
+        // close up
+        i = 0;
+        ctx.lineTo(points[i].x, points[i].y);
+        ctx.closePath();
+        applyStyle(ctx, style);
+    }
+
+    function drawRectangle(ctx, x, y, w, h, style) {
+        ctx.beginPath();
+        setStyle(ctx, style);
+        ctx.rect(x, y, w, h);
+        applyStyle(ctx, style);
+    }
+
+    function drawText(ctx, text, x, y, style) {
+        ctx.beginPath();
+        setStyle(ctx, style);
+        ctx.fillText(text, x, y);
+    }
+
+    function play() {
+        console.log("event");
+        files = document.getElementById('v_file').files;
+        var video_file = null;
+        var video_name = "";
+        var anno_file = null;
+        for (var i = 0; i < files.length; i++) {
+            filename = files[i].name;
+            if (isFileVideo(filename)) {
+                video_file = files[i];
+                video_name = filename;
+            }
+            if (isFileAnnotation(filename)) {
+                anno_file = files[i];
+            }
+        }
+        if (!video_file) {
+            return;
+        }
+        // setup video
+        var url = URL.createObjectURL(video_file);
+        console.log(url);
+        videoObj = document.getElementById('video');
+        videoObj.setAttribute("src", null);
+        videoObj.pause();
+        videoObj.setAttribute("src", url);
+        videoObj.load();
+        console.log("reload");
+        document.getElementById('filename').innerHTML = video_name;
+        // parse annotation
+        if (anno_file) {
+            parseAnnotation(anno_file, function () {
+                let videoObj = document.getElementById('video');
+                // get video size
+                videoObj.addEventListener('canplay', function () {
+                    video_width = this.videoWidth;
+                    video_height = this.videoHeight;
+                    this.play();
+                });
+                // track progress
+                videoObj.addEventListener('timeupdate', function () {
+                    current = this.currentTime;
+                    matched = matchTimestamp(current, anno_list, 1.0);
+                    if (!matched.length) {
+                        clearCanvas();
+                        return;
+                    }
+                    // draw frame
+                    var canvas = document.getElementById("canvas");
+                    renderFrames(canvas, matched);
+                });
+            });
+        }
+    }
+
+    function renderFrame(ctx, frame) {
+        objList = frame.objectList;
+        for (let i = 0; i < objList.length; i++) {
+            obj = objList[i];
+            p = obj.params;
+            shape = obj.shape;
+            style = obj.style;
+            if ('line' == shape) {
+                drawLine(ctx, p.x1, p.y1, p.x2, p.y2, style);
+            } else if ('circle' == shape) {
+                drawCircle(ctx, p.x, p.y, p.radius, style);
+            } else if ('rectangle' == shape) {
+                drawRectangle(ctx, p.x, p.y, p.w, p.h, style);
+            } else if ('polygon' == shape) {
+                drawPolygon(ctx, p.points, style);
+            } else if ('text' == shape) {
+                drawText(ctx, p.text, p.x, p.y, style);
+            }
+        }
+    }
+
+    function renderFrames(canvas, frameList) {
+        let ctx = canvas.getContext("2d");
+        // set scale
+        canvas_width = canvas.width;
+        canvas_height = canvas.height;
+        canvas_offw = canvas.offsetWidth;
+        canvas_offh = canvas.offsetHeight;
+        canvas.width = canvas_offw;
+        canvas.height = canvas_offh;
+        // console.log("canvas:"+canvas_width);
+        ctx.resetTransform();
+        ctx.scale(canvas_width*1.0/video_width, canvas_height*1.0/video_height);
+
+        for (let i = 0; i < frameList.length; i++) {
+            renderFrame(ctx, frameList[i]);
+        }
+    }
+</script>
+</body>
+</html>
