@@ -18,7 +18,7 @@ Main features of the library are:
   - A video annotation format and [HTML viewer](deeploader/tools/player.md)
 - ONNX
   - Fixed some bugs for convert MxNet models to ONNX [x2onnx](deeploader/x2onnx)
-  - Mode forward  wrappers for different backends like (Pytorch/MxNet/ONNX)  [x2onnx](deeploader/x2onnx/backends)
+  - Mode forward  wrappers for different backends like (Pytorch/MxNet/ONNX)  [backends](deeploader/x2onnx/backends)
 
 
 
