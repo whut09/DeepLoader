@@ -9,10 +9,13 @@ from deeploader.util.alignment import *
 KEY_ESC = 27
 KEY_SPACE = 32
 KEY_CR = 13
-
+# B, G, R
 COLOR_GREEN = (0, 255, 0)
 COLOR_RED = (0, 0, 255)
 COLOR_BLUE = (255, 0, 0)
+COLOR_YELLOW = (0, 255, 255)
+COLOR_CYAN = (255, 255, 0)
+COLOR_PINK = (255,0,255)
 COLOR_WHITE = (255, 255, 255)
 COLOR_BLACK = (0, 0, 0)
 COLOR_GRAY = (128, 128, 128)
@@ -67,7 +70,13 @@ def cvZero(img):
 
 
 def cvCopy(src, dst, rect):
-    dst[rect[0]:(rect[0] + rect[2]), rect[1]:(rect[1] + rect[3]), :] = src
+    if len(dst.shape) > 2:
+        if dst.shape[2] > 1:
+            dst[rect[0]:(rect[0] + rect[2]), rect[1]:(rect[1] + rect[3]), :] = src
+        else:
+            dst[rect[0]:(rect[0] + rect[2]), rect[1]:(rect[1] + rect[3]), 0] = src
+    else:
+        dst[rect[0]:(rect[0] + rect[2]), rect[1]:(rect[1] + rect[3])] = src
     return dst
 
 
