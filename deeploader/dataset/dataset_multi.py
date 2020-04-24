@@ -13,6 +13,7 @@ class MultiDataset(ClassifyDataset):
     def add(self, dataset, id_offset=-1):
         self.datasets.append(dataset)
         # classify data
+        num_class = 0
         if hasattr(dataset, 'numOfClass'):
             if id_offset >= 0:
                 id_offset = id_offset
@@ -20,7 +21,8 @@ class MultiDataset(ClassifyDataset):
             else:
                 id_offset = self.totalClass
                 self.totalClass += dataset.numOfClass()
-        meta = {'id_offset': id_offset, 'numOfClass':dataset.numOfClass(),
+            num_class = dataset.numOfClass()
+        meta = {'id_offset': id_offset, 'numOfClass': num_class,
           'index_offset':self.totalSize, 'size': dataset.size()} 
         self.metas.append(meta)
 
