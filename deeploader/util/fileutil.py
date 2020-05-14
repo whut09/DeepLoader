@@ -5,6 +5,7 @@ from __future__ import print_function
 import os
 import os.path
 import time
+import sys
 
 
 def translate_path(src_prefix, dst_prefix, path):
@@ -60,10 +61,15 @@ def read_lines(path):
     list = []
     if not os.path.exists(path):
         return list
+    if sys.version_info < (3, 0):
+        import codecs
+        f = codecs.open(path, 'r', 'utf-8');
+    else:
+        f = open(path, 'r', encoding='utf-8')
 
-    with open(path, 'r') as f:
-        for line in f.readlines():
-            list.append(line.strip())
+    for line in f.readlines():
+        list.append(line.strip())
+    f.close()
     print('read:%d lines from %s' % (len(list), path))
     return list
 
@@ -73,19 +79,37 @@ def read_json(path):
     if not os.path.exists(path):
         return list
 
-    with open(path, 'r') as f:
-        for line in f.readlines():
-            list = list + line.strip()
-    # print('read:%d chars from %s' % (len(list), path))
+    if sys.version_info < (3, 0):
+        import codecs
+        f = codecs.open(path, 'r', 'utf-8')
+    else:
+        f = open(path, 'r', encoding='utf-8')
+    for line in f.readlines():
+        list = list + line.strip()
+    f.close()
     return list
 
 
 def write_lines(path, lines):
-    with open(path, 'w') as f:
-        for line in lines:
-            f.write('%s\n' % line)
+    if sys.version_info < (3, 0):
+        import codecs
+        f = codecs.open(path, 'w', 'utf-8')
+    else:
+        f = open(path, 'w', encoding='utf-8')
+    for line in lines:
+        f.write('%s\n' % line)
+    f.close()
     print('write:%d lines to %s' % (len(lines), path))
     return lines
+
+
+def open_utf_file(path, mode):
+    if sys.version_info < (3, 0):
+        import codecs
+        f = codecs.open(path, mode, 'utf-8')
+    else:
+        f = open(path, mode, encoding='utf-8')
+    return f
 
 
 def list_walker(list_path, visitor):
@@ -123,6 +147,12 @@ def get_file_size(filepath):
     except Exception as err:
         print(err)
         return 0
+
+
+def get_file_title(path):
+    fname = os.path.basename(path)
+    return fname.split('.')[0]
+
 
 
 IMAGE_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'gif', 'bmp', 'tif'])
