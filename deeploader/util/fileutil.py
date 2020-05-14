@@ -70,7 +70,7 @@ def read_lines(path):
     for line in f.readlines():
         list.append(line.strip())
     f.close()
-    print('read:%d lines from %s' % (len(list), path))
+    #print('read:%d lines from %s' % (len(list), path))
     return list
 
 
@@ -99,7 +99,7 @@ def write_lines(path, lines):
     for line in lines:
         f.write('%s\n' % line)
     f.close()
-    print('write:%d lines to %s' % (len(lines), path))
+    #print('write:%d lines to %s' % (len(lines), path))
     return lines
 
 
