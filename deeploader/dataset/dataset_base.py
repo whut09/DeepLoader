@@ -1,6 +1,6 @@
 # coding=utf-8
 class ArrayDataset(object):
-    def __init__(self, name='--'):
+    def __init__(self, name='--', **kargs):
         self.name = name
         
     def verbose(self):
