@@ -22,7 +22,7 @@ def IoU(A, B):
     SA = box_A[2] * box_A[3]
     SB = box_B[2] * box_B[3]
     intersection = W * H
-    return intersection/(SA + SB - intersection)
+    return float(intersection)/(SA + SB - intersection)
 
 
 def IoM(box_A, box_B):
@@ -43,7 +43,7 @@ def IoM(box_A, box_B):
     SB = box_B[2] * box_B[3]
     min_area = min(SA, SB)
     intersection = W * H
-    return intersection / min_area
+    return float(intersection) / min_area
 
 
 def match_bbox(dts, gts, iou_thresh=0.5):
