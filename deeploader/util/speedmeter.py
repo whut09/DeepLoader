@@ -1,4 +1,6 @@
 import time
+from collections import OrderedDict
+
 
 class Speedometer(object):
     def __init__(self, num_ema=10):
@@ -35,5 +37,42 @@ class Speedometer(object):
     def avg(self):
         now = time.time()
         return self.total/(now - self.start)
-        
 
+
+class TimeRecorder(object):
+    def __init__(self):
+        self.record = OrderedDict()
+        self.last = None
+
+    def reset(self):
+        self.record.clear()
+        self.last = None
+
+    def start(self, tag):
+        """Callback to Show speed."""
+        now = time.time()
+        self.record[tag] = [now]
+        self.last = tag
+
+    def stop(self, tag):
+        now = time.time()
+        self.record[tag].append(now)
+        self.last = None
+
+    def into(self, tag):
+        if self.last:
+            self.stop(self.last)
+        self.start(tag)
+
+    def get_time(self, tag):
+        l = self.record[tag]
+        return l[-1] - l[0]
+
+    def report(self, tag_list=None):
+        tags = list(self.record.keys())
+        fmt_str = ''
+        for tag in tags:
+            if tag_list and tag not in tag_list:
+                continue
+            fmt_str += '%s:%.4f ' % (tag, self.get_time(tag))
+        print(fmt_str)

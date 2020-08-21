@@ -32,7 +32,7 @@ def parse_mx_checkpoint(param_path):
     return os.path.dirname(param_path) + '/' + name, int(epoch)
 
 
-def check_model(pretrained, onnx_file_path, input_shape, output_name, var_shape):
+def check_model(pretrained, onnx_file_path, input_shape, output_name, var_shape, label_name=None):
     param_path, epoch = parse_mx_checkpoint(pretrained)
     input_shape0 = input_shape[0]
     # check shape
@@ -40,14 +40,14 @@ def check_model(pretrained, onnx_file_path, input_shape, output_name, var_shape)
     np.random.seed(10)
     extractor = MxnetBackend()
     extractor.init(param_path + ',' + str(epoch), 1, input_shape0,
-                   output_name)
+                   output_name, label_name=label_name)
 
     session = OnnxBackend()
     session.init(onnx_file_path)
     return check_model_outputs(extractor, session, input_shape, var_shape)
 
 
-def convert_model(pretrained, onnx_file_path, input_shape, output_name, var_shape=None):
+def convert_model(pretrained, onnx_file_path, input_shape, output_name, var_shape=None, label_name=None):
     param_path, epoch = parse_mx_checkpoint(pretrained)
     makedirs(onnx_file_path)
     print(param_path, epoch)
@@ -66,7 +66,7 @@ def convert_model(pretrained, onnx_file_path, input_shape, output_name, var_shap
                     model.graph.input[idx].type.tensor_type.shape.dim[dim].dim_value = val
         onnx.save(model, onnx_file_path)
 
-    return check_model(pretrained, onnx_file_path, input_shape, output_name, var_shape)
+    return check_model(pretrained, onnx_file_path, input_shape, output_name, var_shape,label_name)
 
 
 def check_onnx_model(model_path):

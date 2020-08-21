@@ -30,7 +30,8 @@ def get_output_sym(sym, output_name):
 
 
 class MxnetBackend(BaseBackend):
-    def init(self, model_path, batch_size, data_shape, output_name, data_name='data'):
+    def init(self, model_path, batch_size, data_shape, output_name, 
+             data_name='data', label_name=None):
         print('data_shape', data_shape)
         ctx = mx.gpu(0)
         vec = model_path.split(',')
@@ -41,13 +42,17 @@ class MxnetBackend(BaseBackend):
         print('loading', prefix, epoch)
         sym, arg_params, aux_params = mx.model.load_checkpoint(prefix, epoch)
         sym = get_output_sym(sym, output_name)
-        model = mx.mod.Module(symbol=sym, context=ctx, label_names=None)
-        model.bind(
-            data_shapes=[(data_name, (batch_size, data_shape[1], data_shape[2], data_shape[3]))])
+        model = mx.mod.Module(symbol=sym, context=ctx, label_names=(label_name,))
+        data_shapes = [(data_name, (batch_size, data_shape[1], data_shape[2], data_shape[3]))]
+        label_shapes = None
+        if label_name:
+            label_shapes = [(label_name, (batch_size,))]
+        model.bind(data_shapes=data_shapes,label_shapes=label_shapes, for_training=False, grad_req='null')
         model.set_params(arg_params, aux_params, allow_missing=True, allow_extra=True)
         #print(model.data_shapes)
         #print(model.data_names)
         # save context
+        self.label_name = label_name
         self.model = model
         self.batch_size = batch_size
         self.verbose()
@@ -60,11 +65,13 @@ class MxnetBackend(BaseBackend):
 
     def run(self, output_names, input_feed, run_options=None):
         x_batch = input_feed['data']
-        _label = nd.ones((self.batch_size,))
         nd_x = nd.array(x_batch)
         # print(nd_x)
-        # db = mx.io.DataBatch(data=(nd_x, ), label=(_label, ))
-        db = mx.io.DataBatch(data=(nd_x,))
+        if self.label_name:
+            _label = nd.ones((nd_x.shape[0],))
+            db = mx.io.DataBatch(data=(nd_x, ), label=(_label, ))
+        else:
+            db = mx.io.DataBatch(data=(nd_x,))
         self.model.forward(db, is_train=False)
         net_out = self.model.get_outputs()
         model_output_names = self.model.output_names
